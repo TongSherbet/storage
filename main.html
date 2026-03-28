@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Opium</title>
+  <title>opium</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -179,7 +179,7 @@
 </head>
 <body>
 
-  <div class="wordmark">Opium</div>
+  <div class="wordmark">opium</div>
 
   <div class="search-bar">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -303,9 +303,9 @@
       if (document.fullscreenElement) document.exitFullscreen();
     }
 
-    function goBack()    { try { frame ? frame.contentWindow.history.back()    : document.getElementById('frame').contentWindow.history.back();    } catch(e){} }
-    function goForward() { try { frame ? frame.contentWindow.history.forward() : document.getElementById('frame').contentWindow.history.forward(); } catch(e){} }
-    function reload()    { try { frame ? frame.contentWindow.location.reload() : document.getElementById('frame').contentWindow.location.reload(); } catch(e){} }
+    function goBack()    { try { frame ? frame.frame.contentWindow.history.back()    : document.getElementById('frame').contentWindow.history.back();    } catch(e){} }
+    function goForward() { try { frame ? frame.frame.contentWindow.history.forward() : document.getElementById('frame').contentWindow.history.forward(); } catch(e){} }
+    function reload()    { try { frame ? frame.frame.contentWindow.location.reload() : document.getElementById('frame').contentWindow.location.reload(); } catch(e){} }
 
     document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') navigate(); });
     document.getElementById('addrInput').addEventListener('keydown', e => {
