@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opium</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh; overflow: hidden;
+      background: #0c0c0c;
+      font-family: 'DM Sans', sans-serif;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse 70% 55% at 50% 48%, rgba(255,255,255,0.025) 0%, transparent 70%);
+    }
+
+    .wordmark {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 2.6rem;
+      font-weight: 400;
+      color: #fff;
+      letter-spacing: -0.01em;
+      margin-bottom: 28px;
+      user-select: none;
+    }
+
+    .search-bar {
+      display: flex; align-items: center;
+      background: #161616;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 0 14px;
+      width: min(480px, 88vw);
+      gap: 10px;
+    }
+    .search-bar svg { width: 14px; height: 14px; stroke: #444; fill: none; stroke-width: 2; flex-shrink: 0; }
+    .search-bar input {
+      flex: 1; background: none; border: none; outline: none;
+      font-family: inherit; font-size: 0.85rem; font-weight: 300;
+      color: #ccc; padding: 13px 0;
+    }
+    .search-bar input::placeholder { color: #3a3a3a; }
+
+    .shortcuts {
+      margin-top: 20px;
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      width: min(480px, 88vw);
+    }
+    .shortcut {
+      display: flex; flex-direction: column; align-items: center; gap: 7px;
+      width: 70px; padding: 13px 8px 11px;
+      background: #141414; border: 1px solid #1e1e1e; border-radius: 10px;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    }
+    .shortcut:hover { background: #1a1a1a; border-color: #2a2a2a; }
+    .shortcut-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: #1e1e1e; border: 1px solid #272727;
+    }
+    .shortcut span { font-size: 0.6rem; color: #555; letter-spacing: 0.02em; }
+    .shortcut:hover span { color: #888; }
+
+    /* browser panel */
+    .panel {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; flex-direction: column;
+      background: #111;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .panel.open { transform: translateY(0); }
+
+    .panel-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px;
+      background: #141414; border-bottom: 1px solid #1e1e1e;
+      flex-shrink: 0;
+    }
+
+    .nb {
+      background: none; border: none; cursor: pointer;
+      color: #444; padding: 5px; border-radius: 6px;
+      display: flex; align-items: center; transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    .nb:hover { color: #aaa; }
+    .nb svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; display: block; }
+
+    /* home button states */
+    .home-btn { color: #444; transition: color 0.15s; }
+    .home-btn.confirm { color: #e05555 !important; }
+
+    .addr-input {
+      flex: 1; background: #1a1a1a; border: 1px solid #252525;
+      border-radius: 7px; padding: 6px 12px;
+      font-family: inherit; font-size: 0.75rem; color: #aaa; outline: none;
+    }
+    .addr-input:focus { border-color: #333; color: #ddd; }
+    .panel iframe { flex: 1; border: none; background: #111; }
+
+    /* bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: center; align-items: stretch;
+      background: #0e0e0e;
+      border-top: 1px solid #191919;
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .bottom-nav.hidden { transform: translateY(100%); }
+
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      flex: 1; max-width: 120px;
+      padding: 11px 0 13px;
+      background: none; border: none; color: #3a3a3a;
+      font-family: inherit; font-size: 0.58rem; letter-spacing: 0.08em;
+      text-transform: uppercase; cursor: pointer;
+      transition: color 0.15s;
+      position: relative;
+    }
+    .nav-item::before {
+      content: '';
+      position: absolute; top: 0; left: 25%; right: 25%; height: 1px;
+      background: #fff; opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .nav-item:hover { color: #aaa; }
+    .nav-item:hover::before { opacity: 0.15; }
+    .nav-item svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+    /* settings sheet */
+    .settings-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      background: #141414; border-top: 1px solid #222;
+      border-radius: 14px 14px 0 0;
+      padding: 14px 22px 44px;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .settings-sheet.open { transform: translateY(0); }
+    .sheet-handle {
+      width: 32px; height: 3px; border-radius: 2px;
+      background: #2a2a2a; margin: 0 auto 22px;
+    }
+    .sheet-title {
+      font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+      color: #444; margin-bottom: 14px;
+    }
+    .setting-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 13px 0; border-bottom: 1px solid #1c1c1c;
+      font-size: 0.82rem; font-weight: 300; color: #aaa;
+    }
+    .toggle {
+      width: 34px; height: 19px; border-radius: 10px;
+      background: #222; position: relative; cursor: pointer; border: none;
+      transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle.on { background: #fff; }
+    .toggle::after {
+      content: ''; position: absolute;
+      top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%;
+      background: #555; transition: left 0.2s, background 0.2s;
+    }
+    .toggle.on::after { left: 17px; background: #111; }
+  </style>
+</head>
+<body>
+
+  <div class="wordmark">Opium</div>
+
+  <div class="search-bar">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="searchInput" type="text" placeholder="Search or enter address" autocomplete="off" />
+  </div>
+
+  <div class="shortcuts">
+    <div class="shortcut" onclick="navigate('https://duckduckgo.com')">
+      <div class="shortcut-icon"></div><span>Search</span>
+    </div>
+    <div class="shortcut" onclick="navigate('https://youtube.com')">
+      <div class="shortcut-icon"></div><span>YouTube</span>
+    </div>
+    <div class="shortcut" onclick="navigate('https://reddit.com')">
+      <div class="shortcut-icon"></div><span>Reddit</span>
+    </div>
+    <div class="shortcut" onclick="navigate('https://twitter.com')">
+      <div class="shortcut-icon"></div><span>Twitter</span>
+    </div>
+    <div class="shortcut" onclick="navigate('https://tiktok.com')">
+      <div class="shortcut-icon"></div><span>TikTok</span>
+    </div>
+    <div class="shortcut" onclick="navigate('https://discord.com/app')">
+      <div class="shortcut-icon"></div><span>Discord</span>
+    </div>
+  </div>
+
+  <!-- Browser panel -->
+  <div class="panel" id="panel">
+    <div class="panel-bar">
+      <!-- Home button (double-click to close) -->
+      <button class="nb home-btn" id="homeBtn" onclick="handleHome()" title="Home (click twice)">
+        <svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M9 21V12h6v9"/></svg>
+      </button>
+
+      <button class="nb" onclick="goBack()"><svg viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+      <button class="nb" onclick="goForward()"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+      <button class="nb" onclick="reload()"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
+
+      <input class="addr-input" id="addrInput" type="text" placeholder="Search or enter address" />
+
+      <!-- Fullscreen button -->
+      <button class="nb" onclick="toggleFullscreen()" title="Fullscreen">
+        <svg id="fsIcon" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
+    </div>
+    <iframe id="frame" src="about:blank"></iframe>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="settings-sheet" id="settingsSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Settings</div>
+    <div class="setting-row">Ad Block <button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+    <div class="setting-row">Stealth Mode <button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+    <div class="setting-row">History <button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item" onclick="navigate('https://www.crazygames.com')">
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="3"/><path d="M7 11v4M5 13h4M15 12h.01M18 13h.01"/></svg>
+      Games
+    </button>
+    <button class="nav-item" onclick="toggleSettings()">
+      <svg viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+      Settings
+    </button>
+  </nav>
+
+  <script>
+    let homeClickCount = 0;
+    let homeResetTimer = null;
+    let frame = null;
+
+    function resolveUrl(v) {
+      if (!v) return null;
+      if (v.startsWith('http://') || v.startsWith('https://')) return v;
+      if (v.includes('.') && !v.includes(' ')) return 'https://' + v;
+      return 'https://duckduckgo.com/?q=' + encodeURIComponent(v);
+    }
+
+    function navigate(url) {
+      const u = resolveUrl(url || document.getElementById('searchInput').value.trim());
+      if (!u) return;
+      document.getElementById('panel').classList.add('open');
+      document.getElementById('bottomNav').classList.add('hidden');
+      if (!frame) {
+        frame = scramjet.createFrame(document.getElementById('frame'));
+        frame.addEventListener('urlchange', () => {
+          document.getElementById('addrInput').value = frame.url.href;
+        });
+      }
+      document.getElementById('addrInput').value = u;
+      frame.go(u);
+    }
+
+    function handleHome() {
+      const btn = document.getElementById('homeBtn');
+      homeClickCount++;
+      if (homeClickCount === 1) {
+        btn.classList.add('confirm');
+        homeResetTimer = setTimeout(() => {
+          homeClickCount = 0;
+          btn.classList.remove('confirm');
+        }, 5000);
+      } else if (homeClickCount >= 2) {
+        clearTimeout(homeResetTimer);
+        homeClickCount = 0;
+        btn.classList.remove('confirm');
+        closePanel();
+      }
+    }
+
+    function closePanel() {
+      document.getElementById('panel').classList.remove('open');
+      document.getElementById('bottomNav').classList.remove('hidden');
+      document.getElementById('frame').src = 'about:blank';
+      document.getElementById('addrInput').value = '';
+      frame = null;
+      if (document.fullscreenElement) document.exitFullscreen();
+    }
+
+    function goBack()    { try { frame ? frame.contentWindow.history.back()    : document.getElementById('frame').contentWindow.history.back();    } catch(e){} }
+    function goForward() { try { frame ? frame.contentWindow.history.forward() : document.getElementById('frame').contentWindow.history.forward(); } catch(e){} }
+    function reload()    { try { frame ? frame.contentWindow.location.reload() : document.getElementById('frame').contentWindow.location.reload(); } catch(e){} }
+
+    document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') navigate(); });
+    document.getElementById('addrInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const u = resolveUrl(e.target.value.trim());
+        if (u && frame) { e.target.value = u; frame.go(u); }
+        else if (u) navigate(u);
+      }
+    });
+
+    function toggleSettings() { document.getElementById('settingsSheet').classList.toggle('open'); }
+
+    const fsEnterIcon = `<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>`;
+    const fsExitIcon  = `<path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/>`;
+
+    function toggleFullscreen() {
+      const icon = document.getElementById('fsIcon');
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        icon.innerHTML = fsExitIcon;
+      } else {
+        document.exitFullscreen();
+        icon.innerHTML = fsEnterIcon;
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      document.getElementById('fsIcon').innerHTML = document.fullscreenElement ? fsExitIcon : fsEnterIcon;
+    });
+  </script>
+</body>
+</html>
